@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import com.rem.reader.Models.Book;
 import com.rem.reader.Repo.BookRepo;
 
+import jakarta.servlet.http.HttpSession;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -29,7 +31,10 @@ public class BookReaderService {
     @Autowired
     BookRepo bookRepo;
 
-    private static final int BLOCKS_PER_PAGE = 15;
+    @Autowired
+    ProgressService progressService; 
+
+    private static final int BLOCKS_PER_PAGE = 25;
 
     public static class BookPage {
         public int pageNumber;
@@ -43,22 +48,26 @@ public class BookReaderService {
         }
     }
 
-    public ResponseEntity<?> getBookPages(UUID uuid, int pageNumber, int pageSize) {
+    public ResponseEntity<?> getBookPages(UUID bookUuid, int pageNumber, HttpSession session) {
         try {
-            Book book = bookRepo.findByUuid(uuid);
+            Book book = bookRepo.findByUuid(bookUuid);
             if (book == null) {
                 return ResponseEntity.notFound().build();
             }
 
             Path epubPath = Paths.get(book.getFilePath());
-            List<BookPage> pages = extractPages(epubPath, uuid);
+            List<BookPage> pages = extractPages(epubPath, bookUuid);
 
-            int start = pageNumber * pageSize;
-            int end = Math.min(start + pageSize, pages.size());
+            int start = pageNumber * 1;
+            int end = Math.min(start + 1, pages.size());
 
             if (start >= pages.size()) {
                 return ResponseEntity.ok(Collections.emptyList());
             }
+
+            UUID userUuid = (UUID) session.getAttribute("userUuid");
+            progressService.updateUserCurrentPage(userUuid, bookUuid, end);
+
             return ResponseEntity.ok(pages.subList(start, end));
         } catch (Exception e) {
             e.printStackTrace();
@@ -119,12 +128,27 @@ public class BookReaderService {
 
                     for (Element block : blocks) {
                         Element cloned = block.clone();
+
                         cloned.select("img").forEach(img -> {
                             String originalSrc = img.attr("src");
                             String imageName = Path.of(originalSrc).getFileName().toString();
-                            String newSrc = "/api/books/" + bookUuid + "/assets/" + imageName;
+                            String newSrc = "http://localhost:8080/api/book-reader/" + bookUuid + "/assets/" + imageName;
                             img.attr("src", newSrc);
                         });
+
+                        boolean isFullImage = cloned.tagName().equals("p")
+                                && cloned.childrenSize() == 1
+                                && cloned.select("img").size() == 1;
+
+                        if (isFullImage) {
+                            if (!pageBuilder.isEmpty()) {
+                                pages.add(new BookPage(++pageCounter, chapterTitle, pageBuilder.toString().trim()));
+                                pageBuilder = new StringBuilder();
+                                blockCount = 0;
+                            }
+                            pages.add(new BookPage(++pageCounter, chapterTitle, cloned.outerHtml()));
+                            continue;
+                        }
 
                         pageBuilder.append(cloned.outerHtml()).append("\n");
                         blockCount++;

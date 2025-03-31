@@ -11,7 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "books") 
+@Table(name = "book") 
 public class Book {
 
     @Id
@@ -44,6 +44,7 @@ public class Book {
     // Getters
     public long getId() { return id; }
     public LocalDateTime getUploadedAt() { return uploadedAt; }
+
 
     // Getters and Setters 
     public void setUuid(UUID uuid) { this.uuid = uuid; }

@@ -1,0 +1,33 @@
+body {
+    font-family: sans-serif;
+    padding: 2rem;
+    background: #f9f9f9;
+  }
+  
+  #book-meta {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+  
+  #cover {
+    width: 120px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  }
+  
+  #book-content {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  
+  #pagination {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+    max-width: 300px;
+  }
+  

@@ -14,11 +14,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.rem.reader.DTO.editBookRequestDTO;
+import com.rem.reader.DTO.EditBookRequestDTO;
 import com.rem.reader.Service.BookService;
 
+import jakarta.servlet.http.HttpSession;
+
 @RestController
-@RequestMapping("/books")
+@RequestMapping("/api/books")
 public class BookController {
 
     @Autowired
@@ -30,8 +32,8 @@ public class BookController {
     }
 
     @PutMapping("/{uuid}/edit")
-    public ResponseEntity<?> editBook(@PathVariable UUID uuid, editBookRequestDTO editBookRequest) {
-        return bookService.editBook(uuid, editBookRequest);
+    public ResponseEntity<?> editBook(@PathVariable UUID uuid, EditBookRequestDTO editBookRequest, HttpSession session) {
+        return bookService.editBook(uuid, editBookRequest, session);
     }
 
     @DeleteMapping("/{uuid}/delete")
@@ -40,8 +42,8 @@ public class BookController {
     }
 
     @GetMapping("/{uuid}")
-    public ResponseEntity<?> getBook(@PathVariable UUID uuid) {
-        return bookService.getBook(uuid);
+    public ResponseEntity<?> getBook(@PathVariable UUID uuid, HttpSession session) {
+        return bookService.getBook(uuid, session);
     }
     
     @GetMapping("/{uuid}/cover")
@@ -49,5 +51,8 @@ public class BookController {
         return bookService.getBookCover(uuid);
     }
 
-
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllBooks(HttpSession session) {
+        return bookService.getAllBooks(session);
+    }
 }

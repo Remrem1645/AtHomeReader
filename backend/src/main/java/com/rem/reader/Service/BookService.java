@@ -18,15 +18,20 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import com.rem.reader.DTO.editBookRequestDTO;
+import com.rem.reader.DTO.EditBookRequestDTO;
 import com.rem.reader.Models.Book;
+import com.rem.reader.Models.Progress;
 import com.rem.reader.Repo.BookRepo;
 
+import jakarta.servlet.http.HttpSession;
+
 @Service
+@Transactional
 public class BookService {
 
     private final Path rootDir = Paths.get("data/books");
@@ -34,17 +39,24 @@ public class BookService {
     @Autowired
     private BookRepo bookRepo;
 
-    public ResponseEntity<?> getBook(UUID uuid) {
+    @Autowired
+    private ProgressService progressService;
+
+    public ResponseEntity<?> getBook(UUID uuid, HttpSession session) {
         try {
             Book book = bookRepo.findByUuid(uuid);
             if (book == null) {
                 return ResponseEntity.notFound().build();
             }
 
+            UUID userUuid = (UUID) session.getAttribute("userUuid");
+            Progress progress = progressService.getUserProgress(userUuid, uuid);
+
             return ResponseEntity.ok().body(Map.of(
                     "uuid", book.getUuid(),
                     "title", book.getTitle(),
                     "author", book.getAuthor(),
+                    "currentPage", progress != null ? progress.getCurrentPageNumber() : 0,
                     "description", book.getDescription(),
                     "filePath", book.getFilePath(),
                     "coverImagePath", book.getCoverImagePath()));
@@ -62,12 +74,12 @@ public class BookService {
             }
 
             if (book.getCoverImagePath() == null || book.getCoverImagePath().isBlank()) {
-                return ResponseEntity.notFound().build(); 
+                return ResponseEntity.notFound().build();
             }
 
             Path coverPath = Paths.get(book.getCoverImagePath());
             var resource = new UrlResource(coverPath.toUri());
-            String contentType = Files.probeContentType(coverPath); 
+            String contentType = Files.probeContentType(coverPath);
 
             if (resource.exists() && resource.isReadable()) {
                 return ResponseEntity.ok()
@@ -82,17 +94,22 @@ public class BookService {
         }
     }
 
-    public ResponseEntity<?> getAllBooks() {
+    public ResponseEntity<?> getAllBooks(HttpSession session) {
         try {
             var books = bookRepo.findAll();
             if (books.isEmpty()) {
                 return ResponseEntity.noContent().build();
             }
 
+            UUID userUuid = (UUID) session.getAttribute("userUuid");
+
             var response = books.stream().map(book -> Map.of(
                     "uuid", book.getUuid(),
                     "title", book.getTitle(),
                     "author", book.getAuthor(),
+                    "currentPage", 
+                        progressService.getUserProgress(userUuid, book.getUuid()) != null ? 
+                        progressService.getUserProgress(userUuid, book.getUuid()).getCurrentPageNumber() : 0,
                     "coverImagePath", book.getCoverImagePath()));
 
             return ResponseEntity.ok().body(response);
@@ -142,7 +159,7 @@ public class BookService {
         }
     }
 
-    public ResponseEntity<?> editBook(UUID uuid, editBookRequestDTO editBookRequest) {
+    public ResponseEntity<?> editBook(UUID uuid, EditBookRequestDTO editBookRequest, HttpSession session) {
         try {
             Book book = bookRepo.findByUuid(uuid);
             if (book == null) {
