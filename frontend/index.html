@@ -2,21 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Book Reader</title>
+  <title>Login</title>
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
-  <div id="reader">
-
-    <div id="book-content"></div>
-
-    <div id="pagination">
-      <button id="prev">⬅️ Prev</button>
-      <span id="page-number">Page 1</span>
-      <button id="next">Next ➡️</button>
+  <div id="login-root">
+    <div id="login-box">
+      <h1>📚 Book Reader</h1>
+      <input type="text" id="username" placeholder="Username" />
+      <input type="password" id="password" placeholder="Password" />
+      <button id="login-btn">Login</button>
+      <p id="login-error"></p>
     </div>
   </div>
-
-  <script type="module" src="/src/main.ts"></script>
+  <script type="module" src="/src/login.ts"></script>
 </body>
 </html>
