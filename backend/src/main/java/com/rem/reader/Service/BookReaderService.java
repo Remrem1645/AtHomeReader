@@ -6,21 +6,23 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.rem.reader.Models.Book;
+import com.rem.reader.Models.BookPageCache;
+import com.rem.reader.Repo.BookPageCacheRepo;
 import com.rem.reader.Repo.BookRepo;
 
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -32,21 +34,12 @@ public class BookReaderService {
     BookRepo bookRepo;
 
     @Autowired
-    ProgressService progressService; 
+    ProgressService progressService;
+
+    @Autowired
+    BookPageCacheRepo bookPageCacheRepo;
 
     private static final int BLOCKS_PER_PAGE = 25;
-
-    public static class BookPage {
-        public int pageNumber;
-        public String title;
-        public String contentHtml;
-
-        public BookPage(int pageNumber, String title, String contentHtml) {
-            this.pageNumber = pageNumber;
-            this.title = title;
-            this.contentHtml = contentHtml;
-        }
-    }
 
     public ResponseEntity<?> getBookPages(UUID bookUuid, int pageNumber, HttpSession session) {
         try {
@@ -56,19 +49,22 @@ public class BookReaderService {
             }
 
             Path epubPath = Paths.get(book.getFilePath());
-            List<BookPage> pages = extractPages(epubPath, bookUuid);
+            if (!bookPageCacheRepo.existsByBookId(bookUuid)) {
+                extractAndCachePages(epubPath, bookUuid);
+            }
 
-            int start = pageNumber * 1;
-            int end = Math.min(start + 1, pages.size());
+            Pageable pageable = PageRequest.of(pageNumber, 1);
+            Page<BookPageCache> page = bookPageCacheRepo.findByBookIdOrderByPageNumberAsc(bookUuid, pageable);
 
-            if (start >= pages.size()) {
+            if (page.isEmpty()) {
                 return ResponseEntity.ok(Collections.emptyList());
             }
 
             UUID userUuid = (UUID) session.getAttribute("userUuid");
-            progressService.updateUserCurrentPage(userUuid, bookUuid, end);
+            progressService.updateUserCurrentPage(userUuid, bookUuid, pageNumber);
 
-            return ResponseEntity.ok(pages.subList(start, end));
+            return ResponseEntity.ok(page.getContent());
+
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("Failed to retrieve book pages: " + e.getMessage());
@@ -96,8 +92,8 @@ public class BookReaderService {
         }
     }
 
-    public List<BookPage> extractPages(Path epubPath, UUID bookUuid) throws IOException {
-        List<BookPage> pages = new ArrayList<>();
+    private void extractAndCachePages(Path epubPath, UUID bookUuid) throws IOException {
+        List<BookPageCache> pagesToCache = new ArrayList<>();
         int pageCounter = 0;
         Path bookDir = epubPath.getParent();
         Path assetsDir = bookDir.resolve("assets");
@@ -142,11 +138,13 @@ public class BookReaderService {
 
                         if (isFullImage) {
                             if (!pageBuilder.isEmpty()) {
-                                pages.add(new BookPage(++pageCounter, chapterTitle, pageBuilder.toString().trim()));
+                                String htmlPage = pageBuilder.toString().trim();
+                                pagesToCache.add(createCache(bookUuid, ++pageCounter, chapterTitle, htmlPage));
                                 pageBuilder = new StringBuilder();
                                 blockCount = 0;
                             }
-                            pages.add(new BookPage(++pageCounter, chapterTitle, cloned.outerHtml()));
+                            String imagePage = cloned.outerHtml();
+                            pagesToCache.add(createCache(bookUuid, ++pageCounter, chapterTitle, imagePage));
                             continue;
                         }
 
@@ -154,18 +152,30 @@ public class BookReaderService {
                         blockCount++;
 
                         if (blockCount >= BLOCKS_PER_PAGE) {
-                            pages.add(new BookPage(++pageCounter, chapterTitle, pageBuilder.toString().trim()));
+                            String htmlPage = pageBuilder.toString().trim();
+                            pagesToCache.add(createCache(bookUuid, ++pageCounter, chapterTitle, htmlPage));
                             pageBuilder = new StringBuilder();
                             blockCount = 0;
                         }
                     }
 
                     if (!pageBuilder.isEmpty()) {
-                        pages.add(new BookPage(++pageCounter, chapterTitle, pageBuilder.toString().trim()));
+                        String htmlPage = pageBuilder.toString().trim();
+                        pagesToCache.add(createCache(bookUuid, ++pageCounter, chapterTitle, htmlPage));
                     }
                 }
             }
         }
-        return pages;
+
+        bookPageCacheRepo.saveAll(pagesToCache);
+    }
+
+    private BookPageCache createCache(UUID bookUuid, int pageNumber, String title, String content) {
+        BookPageCache page = new BookPageCache();
+        page.setBookId(bookUuid);
+        page.setPageNumber(pageNumber);
+        page.setTitle(title);
+        page.setContent(content);
+        return page;
     }
 }

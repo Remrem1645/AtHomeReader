@@ -13,17 +13,14 @@
       <div id="sidebar-content">
         <h2>Settings</h2>
         <div class="setting">
-          <label>
-            <input type="checkbox" id="toggle-dark" />
-            Dark Mode
-          </label>
+            <label>Theme</label>
+            <button id="toggle-dark">☀️</button>
         </div>
         <div class="setting">
           <label>Font Size</label>
           <div class="zoom-controls">
-            <button id="font-down">A-</button>
-            <span id="font-size-label">100%</span>
-            <button id="font-up">A+</button>
+            <button id="font-down">➖</button>
+            <button id="font-up">➕</button>
           </div>
         </div>
       </div>
@@ -31,12 +28,13 @@
 
     <!-- Main Content -->
     <main id="reader-main">
+      <button id="close-reader">✖</button>
       <button id="toggle-sidebar">⚙️</button>
       <div id="book-content"></div>
       <div id="pagination">
-        <button id="prev">⬅️ Prev</button>
+        <button id="prev">◀ Prev</button>
         <span id="page-number">Page 1</span>
-        <button id="next">Next ➡️</button>
+        <button id="next">Next ▶</button>
       </div>
     </main>
   </div>

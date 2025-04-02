@@ -1,5 +1,6 @@
-/* ========= Global ========= */
-html, body {
+/* ===== Global Defaults ===== */
+html,
+body {
     margin: 0;
     padding: 0;
     height: 100%;
@@ -9,56 +10,66 @@ html, body {
     color: var(--text-color, #333);
     transition: background 0.3s, color 0.3s;
     overflow-x: hidden;
-  }
-  
-  #reader-root {
+}
+
+/* ===== Shared Theme Variables ===== */
+#reader-root,
+#login-root,
+#library-root {
+    --font-size: 100;
+    --bg-color: #f4f4f4;
+    --color-2: #999999;
+    --text-color: #333;
+    --card-bg: #fff;
+    --btn-bg: #aeaeae;
+    --btn-hover: #555;
+}
+
+#reader-root.dark,
+#login-root.dark,
+#library-root.dark {
+    --bg-color: #121212;
+    --text-color: #f9f9f9;
+    --color-2: #4e4e4e;
+    --card-bg: #1e1e1e;
+    --btn-bg: #373737;
+    --btn-hover: #777;
+}
+
+/* ============ READER ============ */
+#reader-root {
     display: flex;
     flex-direction: row;
     background: var(--bg-color);
     min-height: 100vh;
     width: 100%;
-    --font-size: 100;
-    --bg-color: #f4f4f4;
-    --text-color: #333;
-    --card-bg: #fff;
-    --btn-bg: #333;
-    --btn-hover: #555;
-  }
-  
-  /* ========= Dark Mode ========= */
-  #reader-root.dark {
-    --bg-color: #121212;
-    --text-color: #f9f9f9;
-    --card-bg: #1e1e1e;
-    --btn-bg: #555;
-    --btn-hover: #777;
-  }
-  
-  /* ========= Sidebar ========= */
-  #reader-sidebar {
+}
+
+/* Sidebar */
+#reader-sidebar {
     position: fixed;
     top: 0;
     left: 0;
     height: 100vh;
     background: var(--card-bg);
     padding: 1rem;
-    border-right: 1px solid #ccc;
+    border-right: 1px solid var(--color-2);
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
     overflow-y: auto;
     width: 250px;
     z-index: 100;
-  }
-  
-  #reader-root:not(.sidebar-open) #reader-sidebar {
+}
+
+#reader-root:not(.sidebar-open) #reader-sidebar {
     width: 0;
     padding: 0;
     overflow: hidden;
     border: none;
-  }
-  
-  /* ========= Sidebar Content ========= */
-  #close-sidebar {
+}
+
+/* Sidebar content */
+#close-sidebar {
     background: transparent;
     color: var(--text-color);
     border: none;
@@ -67,33 +78,50 @@ html, body {
     margin-bottom: 1rem;
     width: 100%;
     text-align: right;
-  }
-  
-  #sidebar-content {
+}
+
+#sidebar-content {
     color: var(--text-color);
     display: flex;
     flex-direction: column;
-    gap: 1.0rem;
-  }
-  
+    gap: 1.5rem;
+}
 
-  .setting label {
+.setting label {
+    padding-bottom: 10px;
+    font-weight: bold;
     font-size: 0.95rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
     color: var(--text-color);
-    padding-bottom: 10px;
-  }
-  
-  .zoom-controls {
-    color: var(--text-color);
+}
+
+#toggle-dark{
+    height: 40px;
+    width: 100%;
+    padding: 0.5rem 0.5rem;
+    background: var(--btn-bg);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+#toggle-dark:hover {
+    background: var(--btn-hover);
+}
+
+.zoom-controls {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-  }
-  
-  .zoom-controls button {
+}
+
+.zoom-controls button {
+    width: 100%;
+    height: 40px;
     padding: 0.3rem 0.8rem;
     font-size: 1rem;
     border: none;
@@ -102,21 +130,23 @@ html, body {
     color: white;
     cursor: pointer;
     transition: background 0.2s ease;
-  }
-  
-  .zoom-controls button:hover {
+}
+
+.zoom-controls button:hover {
     background: var(--btn-hover);
-  }
-  
-  #font-size-label {
+}
+
+#font-size-label {
     width: 50px;
     text-align: center;
     font-weight: bold;
-  }
-  
-  /* ========= Gear Button ========= */
-  #toggle-sidebar {
+}
+
+/* Gear Button */
+#toggle-sidebar {
     position: fixed;
+    height: 50px;
+    width: 60px;
     top: 1rem;
     left: 1rem;
     background: var(--btn-bg);
@@ -124,37 +154,39 @@ html, body {
     border: none;
     border-radius: 6px;
     font-size: 1.2rem;
-    padding: 0.4rem 0.8rem;
+    padding: 0.5rem 0.5rem;
     z-index: 200;
     cursor: pointer;
-  }
-  
-  #reader-root.sidebar-open #toggle-sidebar {
+}
+
+#toggle-sidebar:hover {
+    background: var(--btn-hover);
+}
+
+
+#reader-root.sidebar-open #toggle-sidebar {
     display: none;
-  }
-  
-  /* ========= Main Reader Area ========= */
-  main {
+}
+
+/* Main Content Area */
+main {
     flex: 1;
     min-height: 100vh;
     padding: 2rem;
-    padding-left: 280px; /* space for sidebar */
     background: var(--bg-color);
     display: flex;
     flex-direction: column;
     align-items: center;
     transition: background 0.3s, padding-left 0.3s ease;
-  }
-  
-  #reader-root:not(.sidebar-open) main {
-    padding-left: 2rem;
-  }
-  
-  /* ========= Book Content ========= */
-  #book-content {
+}
+
+
+
+/* Book Content */
+#book-content {
     background: var(--card-bg);
     color: var(--text-color);
-    max-width: 800px;
+    max-width: 1200px;
     width: 100%;
     padding: 2rem;
     margin-top: 3.5rem;
@@ -164,36 +196,37 @@ html, body {
     font-size: calc(var(--font-size) * 1%);
     transition: opacity 0.3s ease, font-size 0.2s ease, background 0.3s, color 0.3s;
     opacity: 0;
-  }
-  
-  #book-content.show {
+}
+
+#book-content.show {
     opacity: 1;
-  }
-  
-  #book-content img {
+}
+
+#book-content img {
     display: block;
     max-width: 100%;
     height: auto;
     margin: 1rem auto;
     object-fit: contain;
     max-height: 75vh;
-  }
-  
-  .full-image-page img {
+}
+
+.full-image-page img {
     max-height: 90vh;
-  }
-  
-  /* ========= Pagination ========= */
-  #pagination {
+}
+
+/* Pagination */
+#pagination {
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 2rem;
     margin-top: 1.5rem;
-  }
-  
-  #pagination button {
+}
+
+#pagination button {
     padding: 0.5rem 1.5rem;
+    height: 50px;
     font-size: 1rem;
     background-color: var(--btn-bg);
     color: white;
@@ -201,15 +234,232 @@ html, body {
     border-radius: 8px;
     cursor: pointer;
     transition: background 0.2s ease;
-  }
-  
-  #pagination button:hover {
+}
+
+#pagination button:hover {
     background-color: var(--btn-hover);
-  }
-  
-  #page-number {
+}
+
+#page-number {
     font-weight: bold;
     font-size: 1.1rem;
     color: var(--text-color);
-  }
-  
+}
+
+#close-reader {
+    position: fixed;
+    height: 50px;
+    width: 60px;
+    top: 1rem;
+    right: 2rem;
+    background: var(--btn-bg);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.2rem;
+    padding: 0.4rem 0.8rem;
+    z-index: 200;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+#close-reader:hover {
+    background: var(--btn-hover);
+}
+
+
+
+/* ============ LOGIN PAGE ============ */
+#login-root {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background: var(--bg-color);
+    color: var(--text-color);
+    transition: background 0.3s, color 0.3s;
+}
+
+#login-box {
+    background: var(--card-bg);
+    color: var(--text-color);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 300px;
+    transition: background 0.3s, color 0.3s;
+}
+
+#login-box input {
+    padding: 0.5rem;
+    font-size: 1rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background: var(--card-bg);
+    color: var(--text-color);
+}
+
+#login-box button {
+    padding: 0.5rem;
+    font-size: 1rem;
+    background: var(--btn-bg);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+#login-box button:hover {
+    background: var(--btn-hover);
+}
+
+#login-box p {
+    color: red;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* ============ LIBRARY PAGE ============ */
+#library-root {
+    padding: 2rem;
+    background: var(--bg-color);
+    color: var(--text-color);
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+}
+
+#library-root header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+#logout-btn {
+    padding: 0.5rem 0.5rem;
+    height: 50px;
+    width: 60px;
+    background: var(--btn-bg);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+#logout-btn:hover {
+    background: var(--btn-hover);
+}
+
+#dark-toggle-btn {
+    height: 50px;
+    width: 60px;
+    padding: 0.5rem 0.5rem;
+    background: var(--btn-bg);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+#dark-toggle-btn:hover {
+    background: var(--btn-hover);
+}
+
+#book-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.book-card {
+    background: var(--card-bg);
+    height: 400px;
+    color: var(--text-color);
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.3s, color 0.3s;
+}
+
+.book-card:hover {
+    transform: translateY(-5px);
+}
+
+.book-card img {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    background-color: var(--card-bg);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.book-card .info {
+    padding: 1rem;
+}
+
+.book-card h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.book-card p {
+    margin: 0.2rem 0;
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+.upload-card {
+    display: flex;
+    height: 400px;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    text-align: center;
+}
+
+
+.upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+    color: var(--text-color);
+}
+
+.upload-placeholder span {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    color: var(--btn-bg);
+}
+
+
+/* ===== Context Menu ===== */
+.context-menu {
+    position: absolute;
+    z-index: 1000;
+    background: var(--card-bg);
+    border: 1px solid var(--btn-bg);
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    display: none;
+    flex-direction: column;
+    padding: 0.5rem 0;
+    min-width: 120px;
+}
+
+.context-menu button {
+    border: var(--card-bg);
+    color: var(--text-color);
+    padding: 0.5rem 1rem;
+    text-align: left;
+    cursor: pointer;
+    width: 100%;
+    border-radius: 8px;
+}

@@ -3,6 +3,11 @@ const passwordInput = document.getElementById("password") as HTMLInputElement;
 const loginBtn = document.getElementById("login-btn")!;
 const errorEl = document.getElementById("login-error")!;
 
+const root = document.getElementById("login-root") || document.getElementById("library-root");
+if (localStorage.getItem("theme") === "dark") {
+  root?.classList.add("dark");
+}
+
 loginBtn.addEventListener("click", async () => {
   const username = usernameInput.value.trim();
   const password = passwordInput.value.trim();
