@@ -9,7 +9,6 @@ import com.rem.reader.Models.Account;
 
 public interface AccountRepo extends JpaRepository<Account, Long> {
 
-    
     /**
      * Find an account by its username.
      * @param username The username of the account to find.

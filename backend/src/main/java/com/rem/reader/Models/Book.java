@@ -31,6 +31,9 @@ public class Book {
     @Column(name = "author")
     private String author = "";
 
+    @Column(name = "pages")
+    private int pages;
+
     @Column(name = "description")
     private String description = "";
 
@@ -55,6 +58,9 @@ public class Book {
 
     public void setAuthor(String author) { this.author = author; }
     public String getAuthor() { return author; }
+
+    public void setPages(int pages) { this.pages = pages; }
+    public int getPages() { return pages; }
 
     public void setFilePath(String filePath) { this.filePath = filePath; }
     public String getFilePath() { return filePath; }

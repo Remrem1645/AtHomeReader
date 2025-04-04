@@ -1,44 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <title>Reader</title>
-  <link rel="stylesheet" href="/src/style.css" />
+    <meta charset="UTF-8" />
+    <title>Reader</title>
+    <link rel="stylesheet" href="/src/style.css" />
 </head>
+
 <body>
-  <div id="reader-root">
-    <!-- Sidebar -->
-    <aside id="reader-sidebar">
-      <button id="close-sidebar">✖</button>
-      <div id="sidebar-content">
-        <h2>Settings</h2>
-        <div class="setting">
-            <label>Theme</label>
-            <button id="toggle-dark">☀️</button>
-        </div>
-        <div class="setting">
-          <label>Font Size</label>
-          <div class="zoom-controls">
-            <button id="font-down">➖</button>
-            <button id="font-up">➕</button>
-          </div>
-        </div>
-      </div>
-    </aside>
+    <div id="reader-root">
+        <!-- Sidebar -->
+        <aside id="reader-sidebar">
+            <button id="close-sidebar">✖</button>
+            <div id="sidebar-content">
+                <h2>Settings</h2>
 
-    <!-- Main Content -->
-    <main id="reader-main">
-      <button id="close-reader">✖</button>
-      <button id="toggle-sidebar">⚙️</button>
-      <div id="book-content"></div>
-      <div id="pagination">
-        <button id="prev">◀ Prev</button>
-        <span id="page-number">Page 1</span>
-        <button id="next">Next ▶</button>
-      </div>
-    </main>
-  </div>
+                <div class="setting">
+                    <label>Theme</label>
+                    <button id="toggle-dark">☀️</button>
+                </div>
 
-  <script type="module" src="/src/reader.ts"></script>
+                <div class="setting">
+                    <label>Font Family</label>
+                    <select id="font-family-select">
+                        <option class="font-family-select-value" value="serif">Serif</option>
+                        <option class="font-family-select-value" value="sans-serif">Sans-serif</option>
+                        <option class="font-family-select-value" value="monospace">Monospace</option>
+                    </select>
+                </div>
+
+                <div class="setting">
+                    <label>Font Size</label>
+                    <div class="zoom-controls">
+                        <button id="font-down">➖</button>
+                        <button id="font-up">➕</button>
+                    </div>
+                </div>
+
+                <div class="setting">
+                    <label>Jump to Page</label>
+                    <div class="jump-controls">
+                        <input type="number" id="page-input" min="1" placeholder="Jump to page">
+                        <button id="jump-btn">Go</button>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main id="reader-main">
+            <button id="close-reader">✖</button>
+            <button id="toggle-sidebar">⚙️</button>
+            <div id="book-content"></div>
+
+            <div id="pagination">
+                <button id="prev">◀ Prev</button>
+                <span id="page-number">Page 1</span>
+                <button id="next">Next ▶</button>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="/src/reader.ts"></script>
 </body>
+
 </html>

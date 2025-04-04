@@ -43,4 +43,13 @@ public interface ProgressRepo extends JpaRepository<Progress, Long> {
     @Query("SELECT p FROM Progress p WHERE p.accountUuid = ?1 AND p.bookUuid = ?2")
     Progress findByAccountUuidAndBookUuid(UUID userUuid, UUID bookUuid);
 
+
+    /**
+     * Remove all progress entries for a specific book UUID.
+     * @param bookUuid The UUID of the book for which to remove progress entries.
+     */
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM progress WHERE book_uuid = ?1", nativeQuery = true)
+    void deleteByBookUuid(UUID bookUuid);
 } 

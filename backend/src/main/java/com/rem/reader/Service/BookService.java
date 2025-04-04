@@ -11,7 +11,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.bouncycastle.oer.its.etsi102941.Url;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
@@ -31,14 +30,29 @@ import jakarta.servlet.http.HttpSession;
 @Service
 public class BookService {
 
-    private final Path rootDir = Paths.get("data/books");
-
     @Autowired
     private BookRepo bookRepo;
 
     @Autowired
     private ProgressService progressService;
 
+    @Autowired
+    private BookReaderService bookReaderService;
+
+    @Autowired
+    private BookPageCacheService bookPageCacheService;
+
+    private final Path rootDir = Paths.get("data/books");
+
+    // Public methods
+
+    /**
+     * Retrieves a book by its UUID and returns its details along with the user's progress.
+     * 
+     * @param uuid The UUID of the book to retrieve.
+     * @param session The HTTP session containing user information.
+     * @return A ResponseEntity containing the book details and user's progress, or an error message.
+     */
     public ResponseEntity<?> getBook(UUID uuid, HttpSession session) {
         try {
             Book book = bookRepo.findByUuid(uuid);
@@ -65,6 +79,12 @@ public class BookService {
         }
     }
 
+    /**
+     * Retrieves the cover image of a book by its UUID.
+     * 
+     * @param uuid The UUID of the book.
+     * @return A ResponseEntity containing the cover image or an error message.
+     */
     public ResponseEntity<?> getBookCover(UUID uuid) {
         try {
             Book book = bookRepo.findByUuid(uuid);
@@ -81,7 +101,6 @@ public class BookService {
             if (coverPath != null && Files.exists(coverPath) && Files.isReadable(coverPath)) {
                 imagePath = coverPath;
             } else {
-                // Fallback to default cover
                 imagePath = Paths.get("data/noCover.png");
                 if (!Files.exists(imagePath)) {
                     return ResponseEntity.notFound().build(); 
@@ -101,6 +120,12 @@ public class BookService {
         }
     }
     
+    /**
+     * Retrieves all books from the database and returns their details along with the user's progress.
+     * 
+     * @param session The HTTP session containing user information.
+     * @return A ResponseEntity containing the list of books and their details, or an error message.
+     */
     public ResponseEntity<?> getAllBooks(HttpSession session) {
         try {
             var books = bookRepo.findAll();
@@ -120,7 +145,6 @@ public class BookService {
                         "coverImageUrl", coverUrl
                 );
             });
-
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             e.printStackTrace();
@@ -128,6 +152,12 @@ public class BookService {
         }
     }
 
+    /**
+     * Uploads a book file, extracts its metadata, and saves it to the database.
+     * 
+     * @param file The book file to upload.
+     * @return A ResponseEntity containing the book details or an error message.
+     */
     public ResponseEntity<?> uploadBook(MultipartFile file) {
         try {
             UUID uuid = UUID.randomUUID();
@@ -169,6 +199,14 @@ public class BookService {
         }
     }
 
+    /** 
+     * Edits the details of a book based on the provided UUID and request data.
+     * 
+     * @param uuid The UUID of the book to edit.
+     * @param editBookRequest The request data containing the new book details.
+     * @param session The HTTP session containing user information.
+     * @return A ResponseEntity indicating the success or failure of the operation.
+     */
     public ResponseEntity<?> editBook(UUID uuid, EditBookRequestDTO editBookRequest, HttpSession session) {
         try {
             Book book = bookRepo.findByUuid(uuid);
@@ -193,22 +231,34 @@ public class BookService {
         }
     }
 
+    /**
+     * Deletes a book and its associated files from the server.
+     * 
+     * @param uuid The UUID of the book to delete.
+     * @return A ResponseEntity indicating the success or failure of the operation.
+     */
     public ResponseEntity<?> deleteBook(UUID uuid) {
         try {
             Book book = bookRepo.findByUuid(uuid);
             if (book == null) return ResponseEntity.notFound().build();
 
-            Path bookPath = Paths.get(book.getFilePath());
-            if (Files.exists(bookPath)) Files.delete(bookPath);
+            Path bookFolder = Paths.get(book.getFilePath()).getParent();
 
-            if (book.getCoverImagePath() != null && !book.getCoverImagePath().isBlank()) {
-                Path coverPath = Paths.get(book.getFilePath())
-                        .getParent()
-                        .resolve(book.getCoverImagePath());
-                if (Files.exists(coverPath)) Files.delete(coverPath);
+            if (Files.exists(bookFolder)) {
+                Files.walk(bookFolder)
+                    .sorted(Comparator.reverseOrder())
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
             }
 
             bookRepo.delete(book);
+            bookReaderService.deleteAllProgressByBoodId(uuid);
+            bookPageCacheService.deleteBookPageCacheByBookId(uuid);
             return ResponseEntity.ok().body("Book deleted successfully");
 
         } catch (Exception e) {
@@ -217,6 +267,39 @@ public class BookService {
         }
     }
 
+    // Internal methods
+
+    /**
+     * Internal method to retrieve a book object by its UUID.
+     * 
+     * @param uuid The UUID of the book.
+     * @return The Book object associated with the given UUID.
+     */
+    public Book getBookObjectById(UUID uuid) {
+        return bookRepo.findByUuid(uuid);
+    }
+
+    /**
+     * Internal method to update the number of pages in a book by its UUID.
+     * 
+     * @param uuid The UUID of the book to update.
+     * @param pages The new number of pages.
+     */
+    public void updatePagesByUuid(UUID uuid, int pages) {
+        bookRepo.updatePagesByUuid(uuid, pages);
+    }
+
+    // Private methods
+
+    /**
+     * Extracts metadata from an EPUB file.
+     * 
+     * @param filePath The path to the EPUB file.
+     * @return A map containing the extracted metadata.
+     * @throws IOException If an I/O error occurs.
+     * @throws TikaException If a Tika error occurs.
+     * @throws SAXException If a SAX error occurs.
+     */
     private static Map<String, String> extractMetaData(Path filePath) throws IOException, TikaException, SAXException {
         Metadata metadata = new Metadata();
         try (InputStream stream = Files.newInputStream(filePath)) {
@@ -231,6 +314,13 @@ public class BookService {
         return extracted;
     }
 
+    /**
+     * Returns the first non-null value from the metadata for the given keys.
+     * 
+     * @param meta The metadata object.
+     * @param keys The keys to check in the metadata.
+     * @return The first non-null value found, or null if none are found.
+     */
     private static String firstNonNull(Metadata meta, String... keys) {
         for (String key : keys) {
             String value = meta.get(key);
@@ -239,6 +329,14 @@ public class BookService {
         return null;
     }
 
+    /**
+     * Extracts the cover image from an EPUB file and saves it to the specified folder.
+     * 
+     * @param epubPath The path to the EPUB file.
+     * @param bookFolder The folder to save the cover image.
+     * @return The name of the cover image file, or null if not found.
+     * @throws IOException If an I/O error occurs.
+     */
     private String extractCoverImage(Path epubPath, Path bookFolder) throws IOException {
         try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(epubPath))) {
             ZipEntry entry;

@@ -100,6 +100,9 @@ function showContextMenu(x: number, y: number, uuid: string) {
 }
 
 async function fetchBooks() {
+    const grid = document.getElementById("book-grid")!;
+    grid.innerHTML = "";
+
   const res = await fetch("http://localhost:8080/api/books/all", {
     credentials: "include",
   });
@@ -109,9 +112,20 @@ async function fetchBooks() {
     return;
   }
 
-  const books = await res.json();
-  const grid = document.getElementById("book-grid")!;
-  grid.innerHTML = "";
+  const text = await res.text();
+  if (!text) {
+    createUploadCard(grid);
+    return;
+  }
+  
+  let books;
+  try {
+    books = JSON.parse(text);
+  } catch (e) {
+    console.error("Invalid JSON:", text);
+    createUploadCard(grid);
+    return;
+  }
 
   for (const book of books) {
     const card = document.createElement("div");

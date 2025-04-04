@@ -5,7 +5,7 @@ body {
     padding: 0;
     height: 100%;
     width: 100%;
-    font-family: sans-serif;
+    font-family: var(--font-family, sans-serif);
     background: var(--bg-color, #f4f4f4);
     color: var(--text-color, #333);
     transition: background 0.3s, color 0.3s;
@@ -17,6 +17,7 @@ body {
 #login-root,
 #library-root {
     --font-size: 100;
+    --font-family: serif;
     --bg-color: #f4f4f4;
     --color-2: #999999;
     --text-color: #333;
@@ -45,7 +46,6 @@ body {
     width: 100%;
 }
 
-/* Sidebar */
 #reader-sidebar {
     position: fixed;
     top: 0;
@@ -68,7 +68,6 @@ body {
     border: none;
 }
 
-/* Sidebar content */
 #close-sidebar {
     background: transparent;
     color: var(--text-color);
@@ -97,10 +96,10 @@ body {
     color: var(--text-color);
 }
 
-#toggle-dark{
+#toggle-dark {
     height: 40px;
     width: 100%;
-    padding: 0.5rem 0.5rem;
+    padding: 0.5rem;
     background: var(--btn-bg);
     color: white;
     border: none;
@@ -111,6 +110,18 @@ body {
 
 #toggle-dark:hover {
     background: var(--btn-hover);
+}
+
+#font-family-select {
+    width: 100%;
+    height: 40px;
+    padding: 1rem;
+    font-size: 1rem;
+    border-radius: 4px;
+    border: 0px solid #ccc;
+    background: var(--btn-bg);
+    color: var(--text-color);
+    font-family: var(--font-family);
 }
 
 .zoom-controls {
@@ -136,13 +147,51 @@ body {
     background: var(--btn-hover);
 }
 
+.jump-controls input {
+    width: 100%;
+    height: 40px;
+    max-width: 160px;
+    padding: 0 0.75rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 4px;
+    background: var(--btn-bg);
+    color: var(--text-color);
+    transition: background 0.2s ease;
+    appearance: none;
+    -moz-appearance: textfield;
+    text-align: center;
+}
+
+.jump-controls input::-webkit-inner-spin-button,
+.jump-controls input::-webkit-outer-spin-button {
+    margin: 0;
+}
+
+.jump-controls button {
+    width: auto;
+    min-width: 65px;
+    height: 40px;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    background: var(--btn-bg);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.jump-controls button:hover {
+    background: var(--btn-hover);
+}
+
 #font-size-label {
     width: 50px;
     text-align: center;
     font-weight: bold;
 }
 
-/* Gear Button */
 #toggle-sidebar {
     position: fixed;
     height: 50px;
@@ -154,7 +203,7 @@ body {
     border: none;
     border-radius: 6px;
     font-size: 1.2rem;
-    padding: 0.5rem 0.5rem;
+    padding: 0.5rem;
     z-index: 200;
     cursor: pointer;
 }
@@ -163,12 +212,10 @@ body {
     background: var(--btn-hover);
 }
 
-
 #reader-root.sidebar-open #toggle-sidebar {
     display: none;
 }
 
-/* Main Content Area */
 main {
     flex: 1;
     min-height: 100vh;
@@ -177,12 +224,9 @@ main {
     display: flex;
     flex-direction: column;
     align-items: center;
-    transition: background 0.3s, padding-left 0.3s ease;
+    transition: background 0.3s;
 }
 
-
-
-/* Book Content */
 #book-content {
     background: var(--card-bg);
     color: var(--text-color);
@@ -194,6 +238,7 @@ main {
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
     line-height: 1.6;
     font-size: calc(var(--font-size) * 1%);
+    font-family: var(--font-family);
     transition: opacity 0.3s ease, font-size 0.2s ease, background 0.3s, color 0.3s;
     opacity: 0;
 }
@@ -215,7 +260,6 @@ main {
     max-height: 90vh;
 }
 
-/* Pagination */
 #pagination {
     display: flex;
     justify-content: center;
@@ -266,7 +310,6 @@ main {
 #close-reader:hover {
     background: var(--btn-hover);
 }
-
 
 
 /* ============ LOGIN PAGE ============ */
@@ -373,13 +416,14 @@ main {
 
 #book-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+    gap: 1.0rem;
 }
 
 .book-card {
     background: var(--card-bg);
     height: 400px;
+    max-width: 225px;
     color: var(--text-color);
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
@@ -418,6 +462,7 @@ main {
 .upload-card {
     display: flex;
     height: 400px;
+    max-width: 225px;
     justify-content: center;
     align-items: center;
     cursor: pointer;
