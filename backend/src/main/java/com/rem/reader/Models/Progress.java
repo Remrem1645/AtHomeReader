@@ -1,5 +1,6 @@
 package com.rem.reader.Models;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -28,7 +29,10 @@ public class Progress {
     private int currentPageNumber;
 
     @Column(name = "favorite")
-    private boolean favorite;
+    private boolean favorite = false;
+
+    @Column(name = "last_read")
+    private LocalDateTime lastRead;
 
     
     // Getters
@@ -47,4 +51,7 @@ public class Progress {
 
     public void setFavorite(boolean favorite) { this.favorite = favorite; }
     public boolean isFavorite() { return favorite; }
+
+    public void setLastRead(LocalDateTime lastRead) { this.lastRead = lastRead; }
+    public LocalDateTime getLastRead() { return lastRead; }
 }

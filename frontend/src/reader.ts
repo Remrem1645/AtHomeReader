@@ -13,6 +13,7 @@ const fontFamilySelect = document.getElementById("font-family-select") as HTMLSe
 const pageInput = document.getElementById("page-input") as HTMLInputElement;
 const jumpBtn = document.getElementById("jump-btn")!;
 
+
 let canNext = true;
 const params = new URLSearchParams(window.location.search);
 const uuid = params.get("uuid");
@@ -23,6 +24,7 @@ if (!uuid) {
 }
 
 let page = 0;
+let totalPages = 0;
 let fontSize = 100;
 
 init();
@@ -118,21 +120,31 @@ prevBtn.addEventListener("click", () => {
 });
 
 nextBtn.addEventListener("click", () => {
-    if (!canNext) return;
+    if (!canNext || page >= totalPages - 1) return;
     page++;
     loadPage();
 });
 
+
 // Jump to page feature
+const errorEl = document.getElementById("jump-error")!;
+
 jumpBtn.addEventListener("click", () => {
-    const jumpPage = parseInt(pageInput.value);
-    if (!isNaN(jumpPage) && jumpPage >= 0) {
-        page = jumpPage;
-        loadPage();
-    } else {
-        alert("Enter a valid page number.");
-    }
+  let jumpPage = parseInt(pageInput.value);
+  if (isNaN(jumpPage) || jumpPage < 0) {
+    errorEl.textContent = "Please enter a valid page number.";
+    return;
+  }
+
+  if (jumpPage >= totalPages) {
+    jumpPage = totalPages - 1;
+  }
+
+  page = jumpPage;
+  loadPage();
+  errorEl.textContent = "";
 });
+
 
 // Load user progress
 async function getUserProgress() {
@@ -152,9 +164,18 @@ async function loadPage() {
         credentials: "include",
     });
 
-    const data = await res.json();
+    if (!res.ok) {
+        contentEl.innerHTML = "<p>Error loading page.</p>";
+        return;
+    }
 
-    if (!data.length) {
+    const result = await res.json();
+    const pages = result.pages;
+    totalPages = result.totalPages;
+    pageInput.placeholder = `Jump to page (max ${totalPages - 1})`;
+    pageInput.max = (totalPages - 1).toString();
+
+    if (!pages || pages.length === 0) {
         contentEl.innerHTML = "<p>No more pages.</p>";
         contentEl.classList.add("show");
         nextBtn.style.display = "none";
@@ -163,10 +184,12 @@ async function loadPage() {
         return;
     }
 
-    canNext = true;
-    nextBtn.style.display = "block";
-    contentEl.innerHTML = data[0].content;
-    const pageNumberContent = data[0].pageNumber === 0 ? "Cover" : `Page ${data[0].pageNumber}`;
+    canNext = page < totalPages - 1;
+    nextBtn.style.display = canNext ? "block" : "none";
+
+    contentEl.innerHTML = pages[0].content;
+
+    const pageNumberContent = pages[0].pageNumber === 0 ? "Cover" : `Page ${pages[0].pageNumber}`;
     pageNumberEl.textContent = pageNumberContent;
 
     const isFullImage = contentEl.querySelectorAll("img").length === 1 && contentEl.children.length === 1;
@@ -174,3 +197,4 @@ async function loadPage() {
 
     setTimeout(() => contentEl.classList.add("show"), 20);
 }
+

@@ -7,19 +7,28 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.rem.reader.Models.Book;
 import com.rem.reader.Models.BookPageCache;
+import com.rem.reader.Models.Progress;
+import com.rem.reader.Repo.BookPageCacheRepo;
+import com.rem.reader.Repo.BookRepo;
+import com.rem.reader.Repo.ProgressRepo;
 
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -27,13 +36,13 @@ import java.util.zip.ZipInputStream;
 public class BookReaderService {
 
     @Autowired
-    BookService bookService;
+    BookRepo bookRepo;
 
     @Autowired
-    ProgressService progressService;
+    ProgressRepo progressRepo;
 
     @Autowired
-    BookPageCacheService bookPageCacheService;
+    BookPageCacheRepo bookPageCacheRepo;
 
     private static final int BLOCKS_PER_PAGE = 15;
 
@@ -51,15 +60,15 @@ public class BookReaderService {
      */
     public ResponseEntity<?> getBookPages(UUID bookUuid, int pageNumber, HttpSession session) {
         try {
-            Book book = bookService.getBookObjectById(bookUuid);
+            Book book = bookRepo.findByUuid(bookUuid);
             if (book == null)
                 return ResponseEntity.notFound().build();
 
             Path epubPath = Paths.get(book.getFilePath());
-            if (!bookPageCacheService.existsByBookId(bookUuid))
+            if (!bookPageCacheRepo.existsByBookId(bookUuid))
                 extractAndCachePages(epubPath, bookUuid);
 
-            Page<BookPageCache> page = bookPageCacheService.getBookPageCacheByBookId(
+            Page<BookPageCache> page = getBookPageCacheByBookId(
                     bookUuid,
                     pageNumber,
                     1);
@@ -68,9 +77,15 @@ public class BookReaderService {
                 return ResponseEntity.ok(Collections.emptyList());
 
             UUID userUuid = (UUID) session.getAttribute("userUuid");
-            progressService.updateUserCurrentPage(userUuid, bookUuid, pageNumber);
+            if (userUuid == null) 
+                return ResponseEntity.status(401).body("User not authenticated");
+            
 
-            return ResponseEntity.ok(page.getContent());
+            updateUserCurrentPage(userUuid, bookUuid, pageNumber);
+
+
+
+            return ResponseEntity.ok().body(Map.of("pages", page.getContent(), "totalPages", page.getTotalPages()));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("Failed to retrieve book pages: " + e.getMessage());
@@ -87,7 +102,7 @@ public class BookReaderService {
      */
     public ResponseEntity<?> getCurrentBookAsset(UUID bookUuid, String assetPath) {
         try {
-            Book book = bookService.getBookObjectById(bookUuid);
+            Book book = bookRepo.findByUuid(bookUuid);
             if (book == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -104,17 +119,6 @@ public class BookReaderService {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("Failed to retrieve asset: " + e.getMessage());
         }
-    }
-
-    // Internal methods
-
-    /**
-     * Deletes all progress entries for a specific book UUID.
-     * 
-     * @param bookUuid The UUID of the book for which to remove progress entries.
-     */
-    public void deleteAllProgressByBoodId(UUID bookUuid) {
-        progressService.removeAllProggressByBookId(bookUuid);
     }
 
     // Private methods
@@ -201,8 +205,8 @@ public class BookReaderService {
                 }
             }
         }
-        bookService.updatePagesByUuid(bookUuid, pageCounter);
-        bookPageCacheService.saveBookPageCache(pagesToCache);
+        bookRepo.updatePagesByUuid(bookUuid, pageCounter);
+        bookPageCacheRepo.saveAll(pagesToCache);
     }
 
     /**
@@ -222,4 +226,41 @@ public class BookReaderService {
         page.setContent(content);
         return page;
     }
+
+    /**
+     * Updates the user's current page for a specific book. If the progress entry
+     * does not exist, it creates a new one.
+     * 
+     * @param userUuid    The UUID of the user.
+     * @param bookUuid    The UUID of the book.
+     * @param currentPage The current page number.
+     */
+    public void updateUserCurrentPage(UUID userUuid, UUID bookUuid, int currentPage) {
+        if (progressRepo.existsByAccountUuidAndBookUuid(userUuid, bookUuid)) {
+            progressRepo.updateCurrentPage(userUuid, bookUuid, currentPage);
+        } 
+        else {
+            Progress progress = new Progress();
+            progress.setAccountUuid(userUuid); 
+            progress.setBookUuid(bookUuid); 
+            progress.setCurrentPageNumber(currentPage);
+            progress.setFavorite(false);
+
+            progressRepo.save(progress); 
+        }
+    }
+
+    /**
+     * Get a paginated list of book pages for a given book ID, ordered by page number.
+     * @param bookId The UUID of the book.
+     * @param pageNumber The page number of the book.
+     * @param pageSize The size of the page.
+     * @return A paginated list of BookPageCache entities.
+     */
+    public Page<BookPageCache> getBookPageCacheByBookId(UUID bookId, int pageNumber, int pageSize) {
+        return bookPageCacheRepo.findByBookIdOrderByPageNumberAsc(
+                bookId,
+                PageRequest.of(pageNumber, pageSize));
+    }
+    
 }

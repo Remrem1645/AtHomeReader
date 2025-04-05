@@ -40,49 +40,4 @@ public class ProgressService {
             return ResponseEntity.notFound().build();
         }
     }
-
-    // Internal methods
-
-    /**
-     * Updates the user's current page for a specific book. If the progress entry
-     * does not exist, it creates a new one.
-     * 
-     * @param userUuid    The UUID of the user.
-     * @param bookUuid    The UUID of the book.
-     * @param currentPage The current page number.
-     */
-    public void updateUserCurrentPage(UUID userUuid, UUID bookUuid, int currentPage) {
-        if (progressRepo.existsByAccountUuidAndBookUuid(userUuid, bookUuid)) {
-            progressRepo.updateCurrentPage(userUuid, bookUuid, currentPage);
-        } 
-        else {
-            Progress progress = new Progress();
-            progress.setAccountUuid(userUuid); 
-            progress.setBookUuid(bookUuid); 
-            progress.setCurrentPageNumber(currentPage);
-            progress.setFavorite(false);
-
-            progressRepo.save(progress); 
-        }
-    }
-
-    /**
-     * Retrieves the user's progress for a specific book.
-     * 
-     * @param userUuid The UUID of the user.
-     * @param bookUuid The UUID of the book.
-     * @return The user's progress for the specified book.
-     */
-    public Progress getUserProgress(UUID userUuid, UUID bookUuid) {
-        return progressRepo.findByAccountUuidAndBookUuid(userUuid, bookUuid);
-    }
-
-    /**
-     * Removes all progress entries for a specific book.
-     * 
-     * @param bookUuid The UUID of the book.
-     */
-    public void removeAllProggressByBookId(UUID bookUuid) {
-        progressRepo.deleteByBookUuid(bookUuid);
-    }
 }

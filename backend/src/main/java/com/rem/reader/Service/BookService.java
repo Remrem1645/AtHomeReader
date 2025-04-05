@@ -23,7 +23,9 @@ import org.xml.sax.helpers.DefaultHandler;
 import com.rem.reader.DTO.EditBookRequestDTO;
 import com.rem.reader.Models.Book;
 import com.rem.reader.Models.Progress;
+import com.rem.reader.Repo.BookPageCacheRepo;
 import com.rem.reader.Repo.BookRepo;
+import com.rem.reader.Repo.ProgressRepo;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -34,13 +36,10 @@ public class BookService {
     private BookRepo bookRepo;
 
     @Autowired
-    private ProgressService progressService;
+    private ProgressRepo progressRepo;
 
     @Autowired
-    private BookReaderService bookReaderService;
-
-    @Autowired
-    private BookPageCacheService bookPageCacheService;
+    private BookPageCacheRepo bookPageCacheRepo;
 
     private final Path rootDir = Paths.get("data/books");
 
@@ -59,7 +58,7 @@ public class BookService {
             if (book == null) return ResponseEntity.notFound().build();
 
             UUID userUuid = (UUID) session.getAttribute("userUuid");
-            Progress progress = progressService.getUserProgress(userUuid, uuid);
+            Progress progress = progressRepo.findByAccountUuidAndBookUuid(userUuid, uuid);
 
             String coverUrl = book.getCoverImagePath() != null
                     ? "http://localhost:8080/api/books/" + book.getUuid() + "/cover"
@@ -133,18 +132,21 @@ public class BookService {
 
             UUID userUuid = (UUID) session.getAttribute("userUuid");
 
-            var response = books.stream().map(book -> {
+            var response = books.stream().<Map<String, Object>>map(book -> {
                 String coverUrl = "http://localhost:8080/api/books/" + book.getUuid() + "/cover";
-
-                return Map.of(
-                        "uuid", book.getUuid(),
-                        "title", book.getTitle(),
-                        "author", book.getAuthor(),
-                        "currentPage", Optional.ofNullable(progressService.getUserProgress(userUuid, book.getUuid()))
-                                .map(Progress::getCurrentPageNumber).orElse(0),
-                        "coverImageUrl", coverUrl
+                Progress progress = progressRepo.findByAccountUuidAndBookUuid(userUuid, book.getUuid());
+                
+                return Map.<String, Object>of(
+                    "uuid", book.getUuid(),
+                    "title", book.getTitle(),
+                    "author", book.getAuthor(),
+                    "totalPages", book.getPages(),
+                    "currentPage", progress != null ? progress.getCurrentPageNumber() : 0,
+                    "favorite", progress != null ? progress.isFavorite() : false,
+                    "coverImageUrl", coverUrl
                 );
             });
+            
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             e.printStackTrace();
@@ -257,36 +259,14 @@ public class BookService {
             }
 
             bookRepo.delete(book);
-            bookReaderService.deleteAllProgressByBoodId(uuid);
-            bookPageCacheService.deleteBookPageCacheByBookId(uuid);
+            progressRepo.deleteByBookUuid(uuid);
+            bookPageCacheRepo.deleteByBookUuid(uuid);
             return ResponseEntity.ok().body("Book deleted successfully");
 
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("Failed to delete book: " + e.getMessage());
         }
-    }
-
-    // Internal methods
-
-    /**
-     * Internal method to retrieve a book object by its UUID.
-     * 
-     * @param uuid The UUID of the book.
-     * @return The Book object associated with the given UUID.
-     */
-    public Book getBookObjectById(UUID uuid) {
-        return bookRepo.findByUuid(uuid);
-    }
-
-    /**
-     * Internal method to update the number of pages in a book by its UUID.
-     * 
-     * @param uuid The UUID of the book to update.
-     * @param pages The new number of pages.
-     */
-    public void updatePagesByUuid(UUID uuid, int pages) {
-        bookRepo.updatePagesByUuid(uuid, pages);
     }
 
     // Private methods

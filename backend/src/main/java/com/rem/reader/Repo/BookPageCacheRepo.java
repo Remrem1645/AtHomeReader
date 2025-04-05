@@ -58,5 +58,5 @@ public interface BookPageCacheRepo extends JpaRepository<BookPageCache, Long> {
     @Modifying
     @Transactional
     @Query(value = "DELETE FROM book_page_cache WHERE book_uuid = ?1", nativeQuery = true)
-    void deleteByBookId(UUID bookId);
+    void deleteByBookUuid(UUID bookId);
 }

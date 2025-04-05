@@ -31,3 +31,12 @@ loginBtn.addEventListener("click", async () => {
     errorEl.textContent = "Login failed. Please try again.";
   }
 });
+
+[usernameInput, passwordInput].forEach((input) => {
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        loginBtn.click();
+      }
+    });
+  });
+  
